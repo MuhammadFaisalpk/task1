@@ -1,40 +1,43 @@
 package com.example.task1.view
 
-
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.LinearLayout
+import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.task1.R
+import com.example.task1.databinding.FragmentImagesBinding
 
 class DocsFragment : Fragment() {
-    lateinit var listFragmentView: View
 
     //    lateinit var userViewModel: UserListViewModel
-    lateinit var recyclerView: RecyclerView
-
     //    lateinit var userAdapter: UserListAdapter
+
+    private lateinit var binding: FragmentImagesBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-//        userViewModel = ViewModelProviders.of(activity!!).get(UserListViewModel::class.java)
+        //   userViewModel = ViewModelProviders.of(activity!!).get(UserListViewModel::class.java)
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
+        inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        listFragmentView = inflater.inflate(R.layout.fragment_docs, container, false)
-        initVars(listFragmentView)
-        recyclerView.layoutManager = LinearLayoutManager(activity, RecyclerView.VERTICAL, false)
+        // Inflate the layout for this fragment
 
-//        userAdapter = UserListAdapter()
+        binding = DataBindingUtil.inflate(
+            inflater, R.layout.fragment_docs,
+            container, false
+        )
+
+        val recyclerView = binding.recyclerView
+
+        //        userAdapter = UserListAdapter()
 //        recyclerView.setAdapter(userAdapter)
 //        userViewModel.getAllUsers().observe(this, object : Observer<List<User>> {
 //            override fun onChanged(users: List<User>?) {
@@ -42,14 +45,12 @@ class DocsFragment : Fragment() {
 //                userAdapter.setListItems(users)
 //            }
 //        })
-        return listFragmentView
-    }
 
-    private fun setAdapter() {
+        recyclerView.layoutManager = LinearLayoutManager(
+            activity,
+            RecyclerView.VERTICAL, false
+        )
 
-    }
-
-    private fun initVars(view: View) {
-        recyclerView = view.findViewById(R.id.docs_list)
+        return binding.root
     }
 }
