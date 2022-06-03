@@ -22,7 +22,7 @@
             app:tabSelectedTextColor="@color/teal_200"
             app:tabTextColor="#FFF" />
 
-        <androidx.viewpager.widget.ViewPager
+        <androidx.viewpager2.widget.ViewPager2
             android:id="@+id/pager"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
