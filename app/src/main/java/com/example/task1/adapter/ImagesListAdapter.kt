@@ -1,5 +1,6 @@
 package com.example.task1.adapter
 
+import android.content.Intent
 import android.os.Build
 import android.view.LayoutInflater
 import android.view.View
@@ -10,9 +11,10 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.example.task1.ImageSliderActivity
 import com.example.task1.R
 import com.example.task1.model.ImagesModel
-import java.io.File
+import com.example.task1.utils.Helper
 
 class ImagesListAdapter(private val context: Fragment) :
     RecyclerView.Adapter<ImagesListAdapter.ViewHolder>() {
@@ -44,10 +46,10 @@ class ImagesListAdapter(private val context: Fragment) :
                 .into(holder.imageHolder)
 
             holder.itemView.setOnClickListener() {
-//                val intent = Intent(it.context, ImageSliderActivity::class.java)
-//                intent.putExtra("image_position", position)
-//                intent.putExtra("images_list", items)
-//                it.context.startActivity(intent)
+                val intent = Intent(it.context, ImageSliderActivity::class.java)
+                intent.putExtra("image_position", position)
+                intent.putExtra("images_list", items)
+                it.context.startActivity(intent)
             }
 
             holder.optionHolder.setOnClickListener() {
@@ -56,39 +58,18 @@ class ImagesListAdapter(private val context: Fragment) :
                 popupMenu.setOnMenuItemClickListener { item ->
                     when (item.itemId) {
                         R.id.action_rename -> {
-                            val path =
-                                items?.get(position)?.path
-                            val str =
-                                "/storage/emulated/0/Pictures/Screenshots/"
-
-                            val fInternal = File(path.toString())
-                            val fExternal = File(str, "New.png")
-                            if (fInternal.exists()) {
-                                val success = fInternal.renameTo(fExternal)
-
-                                Toast.makeText(
-                                    it.context,
-                                    success.toString(),
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                            val path = items?.get(position)?.path
+                            val helper = Helper(context.requireContext())
+                            if (path != null) {
+                                helper.requestWriteR(items?.get(position)!!)
                             }
                         }
 
                         R.id.action_delete -> {
-                            val path =
-                                items?.get(position)?.path
 
-                            val file = File(path.toString())
+                            val helper = Helper(context.requireContext())
+                            helper.deleteItem(items?.get(position)!!)
 
-                            if (file.exists()) {
-
-                                val deleted: Boolean = file.delete()
-                                Toast.makeText(
-                                    it.context,
-                                    deleted.toString(),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
                         }
                     }
                     true

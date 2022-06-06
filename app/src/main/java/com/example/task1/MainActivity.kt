@@ -1,24 +1,26 @@
 package com.example.task1
 
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.*
-import androidx.viewpager.widget.ViewPager
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.example.task1.databinding.ActivityMainBinding
+import com.example.task1.utils.Interfaces
 import com.example.task1.view.DocsFragment
 import com.example.task1.view.ImagesFragment
 import com.example.task1.view.VideosFragment
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -27,6 +29,19 @@ class MainActivity : AppCompatActivity() {
     lateinit var viewPager: ViewPager2
     private lateinit var tabLayout: TabLayout
     private val READ_STORAGE_PERMISSION_REQUEST_CODE = 100
+    private val REQUEST_CODE = 200
+    private val REQUEST_CODE1 = 124
+    private val mIntentListener: Interfaces? = null
+
+    private val listofFragment = arrayOf(
+        ImagesFragment(),
+        VideosFragment(), DocsFragment()
+    )
+
+    private val fragmentNames = arrayOf(
+        "Images",
+        "Videos", "Docs"
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -100,12 +115,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setStatePageAdapter() {
-        val adapter = AdapterTabPager(this)
-        adapter.addFragment(ImagesFragment(), "Images")
-        adapter.addFragment(VideosFragment(), "Videos")
-        adapter.addFragment(DocsFragment(), "Docs")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_CODE) {
+            mIntentListener?.onIntent(data, resultCode)
+        } else if (requestCode == REQUEST_CODE1) {
+            mIntentListener?.onIntent1(data, resultCode)
+        }
+    }
 
+    fun setStatePageAdapter() {
+        val adapter = AdapterTabPager(this)
+
+        for (item in listofFragment.indices) {
+            adapter.addFragment(listofFragment[item], fragmentNames[item])
+        }
         viewPager.adapter = adapter
         viewPager.currentItem = 0
         TabLayoutMediator(tabLayout, viewPager) { tab, position ->
@@ -160,6 +184,7 @@ class MainActivity : AppCompatActivity() {
             return mFragmentList[position]
         }
     }
+
     private fun showSnackBar(permissionCheck: Int, lengthLong: Int, actionText: Int) {
         val snackBar =
             Snackbar.make(layout, permissionCheck, lengthLong)

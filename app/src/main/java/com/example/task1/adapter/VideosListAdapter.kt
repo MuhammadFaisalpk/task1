@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.example.task1.R
+import com.example.task1.VideoPlayerActivity
 import com.example.task1.model.ImagesModel
 
 class VideosListAdapter(private val context: Fragment) :
@@ -46,9 +47,9 @@ class VideosListAdapter(private val context: Fragment) :
 
 
             holder.itemView.setOnClickListener() {
-//                val intent = Intent(it.context, VideoPlayerActivity::class.java)
-//                intent.putExtra("video_path", imagePath)
-//                it.context.startActivity(intent)
+                val intent = Intent(it.context, VideoPlayerActivity::class.java)
+                intent.putExtra("video_path", imagePath)
+                it.context.startActivity(intent)
             }
             holder.optionHolder.setOnClickListener() {
                 val popupMenu: PopupMenu = PopupMenu(it.context, holder.optionHolder)

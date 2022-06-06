@@ -23,9 +23,9 @@ class Repository(private val application: Application) {
         val mutableListImages = MutableLiveData<ArrayList<ImagesModel>>()
 
         val columns = arrayOf(
+            MediaStore.Images.Media._ID,
             MediaStore.Images.Media.DATA,
-            MediaStore.Images.Media.DISPLAY_NAME,
-            MediaStore.Images.Media._ID
+            MediaStore.Images.Media.DISPLAY_NAME
         ) //get all columns of type images
         val orderBy = MediaStore.Images.Media.DATE_TAKEN //order data by date
         val cursor: Cursor? = application.contentResolver.query(
@@ -36,17 +36,21 @@ class Repository(private val application: Application) {
         if (cursor != null) {
             for (i in 0 until cursor.count) {
                 cursor.moveToPosition(i)
+                val dataColumnID: Int =
+                    cursor.getColumnIndex(MediaStore.Images.Media._ID) //get column index
                 val dataColumnData: Int =
                     cursor.getColumnIndex(MediaStore.Images.Media.DATA) //get column index
                 val dataColumnName: Int =
                     cursor.getColumnIndex(MediaStore.Images.Media.DISPLAY_NAME) //get column index
 
+                val id: String = cursor.getString(dataColumnID)
                 val name: String = cursor.getString(dataColumnName)
                 val path: String = cursor.getString(dataColumnData)
 
 
                 listImages.add(
                     ImagesModel(
+                        id,
                         name,
                         path
                     )
@@ -63,9 +67,9 @@ class Repository(private val application: Application) {
         val mutableListVideos = MutableLiveData<ArrayList<ImagesModel>>()
 
         val columns = arrayOf(
+            MediaStore.Video.Media._ID,
             MediaStore.Video.Media.DATA,
-            MediaStore.Video.Media.DISPLAY_NAME,
-            MediaStore.Video.Media._ID
+            MediaStore.Video.Media.DISPLAY_NAME
         ) //get all columns of type images
         val orderBy = MediaStore.Video.Media.DATE_TAKEN //order data by date
         val cursor: Cursor? = application.contentResolver.query(
@@ -76,16 +80,20 @@ class Repository(private val application: Application) {
         if (cursor != null) {
             for (i in 0 until cursor.count) {
                 cursor.moveToPosition(i)
+                val dataColumnID: Int =
+                    cursor.getColumnIndex(MediaStore.Images.Media._ID) //get column index
                 val dataColumnData: Int =
                     cursor.getColumnIndex(MediaStore.Video.Media.DATA) //get column index
                 val dataColumnName: Int =
                     cursor.getColumnIndex(MediaStore.Video.Media.DISPLAY_NAME) //get column index
 
+                val id: String = cursor.getString(dataColumnID)
                 val name: String = cursor.getString(dataColumnName)
                 val path: String = cursor.getString(dataColumnData)
 
                 listVideos.add(
                     ImagesModel(
+                        id,
                         name,
                         path
                     )
