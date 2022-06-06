@@ -1,23 +1,24 @@
 package com.example.task1.adapter
 
-import android.os.Build
+import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.*
-import androidx.annotation.RequiresApi
+import android.widget.ImageView
+import android.widget.PopupMenu
+import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.example.task1.R
 import com.example.task1.model.ImagesModel
-import java.io.File
 
-class ImagesListAdapter(private val context: Fragment) :
-    RecyclerView.Adapter<ImagesListAdapter.ViewHolder>() {
+class VideosListAdapter(private val context: Fragment) :
+    RecyclerView.Adapter<VideosListAdapter.ViewHolder>() {
 
-    var items: ArrayList<ImagesModel>? = null
+    var items: List<ImagesModel>? = null
 
     // create new views
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -30,10 +31,10 @@ class ImagesListAdapter(private val context: Fragment) :
     }
 
     // binds the list items to a view
-    @RequiresApi(Build.VERSION_CODES.R)
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
 
         try {
+
             holder.nameHolder.text = items?.get(position)?.name
 
             val imagePath: String? = items?.get(position)?.path
@@ -43,56 +44,32 @@ class ImagesListAdapter(private val context: Fragment) :
                 .skipMemoryCache(true)
                 .into(holder.imageHolder)
 
+
             holder.itemView.setOnClickListener() {
-//                val intent = Intent(it.context, ImageSliderActivity::class.java)
-//                intent.putExtra("image_position", position)
-//                intent.putExtra("images_list", items)
+//                val intent = Intent(it.context, VideoPlayerActivity::class.java)
+//                intent.putExtra("video_path", imagePath)
 //                it.context.startActivity(intent)
             }
-
             holder.optionHolder.setOnClickListener() {
-                val popupMenu = PopupMenu(it.context, holder.optionHolder)
+                val popupMenu: PopupMenu = PopupMenu(it.context, holder.optionHolder)
                 popupMenu.menuInflater.inflate(R.menu.popup_menu, popupMenu.menu)
-                popupMenu.setOnMenuItemClickListener { item ->
+                popupMenu.setOnMenuItemClickListener(PopupMenu.OnMenuItemClickListener { item ->
                     when (item.itemId) {
-                        R.id.action_rename -> {
-                            val path =
-                                items?.get(position)?.path
-                            val str =
-                                "/storage/emulated/0/Pictures/Screenshots/"
-
-                            val fInternal = File(path.toString())
-                            val fExternal = File(str, "New.png")
-                            if (fInternal.exists()) {
-                                val success = fInternal.renameTo(fExternal)
-
-                                Toast.makeText(
-                                    it.context,
-                                    success.toString(),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        }
-
-                        R.id.action_delete -> {
-                            val path =
-                                items?.get(position)?.path
-
-                            val file = File(path.toString())
-
-                            if (file.exists()) {
-
-                                val deleted: Boolean = file.delete()
-                                Toast.makeText(
-                                    it.context,
-                                    deleted.toString(),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        }
+                        R.id.action_rename ->
+                            Toast.makeText(
+                                it.context,
+                                "You Clicked : " + item.title,
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        R.id.action_delete ->
+                            Toast.makeText(
+                                it.context,
+                                "You Clicked : " + item.title,
+                                Toast.LENGTH_SHORT
+                            ).show()
                     }
                     true
-                }
+                })
                 popupMenu.show()
             }
         } catch (e: Exception) {
