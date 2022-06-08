@@ -1,32 +1,43 @@
 package com.example.task1.repository
 
+import android.annotation.SuppressLint
 import android.app.Application
+import android.content.ContentResolver
 import android.database.Cursor
-import android.os.Environment
+import android.net.Uri
+import android.os.Build
 import android.provider.MediaStore
-import android.util.Log
+import android.webkit.MimeTypeMap
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.example.task1.model.ImagesModel
+import com.example.task1.model.Documents
+import com.example.task1.model.Images
+import com.example.task1.model.Videos
 import java.io.File
+
 
 class Repository(private val application: Application) {
 
-    val allLocalImages: LiveData<ArrayList<ImagesModel>> = fetchAllImages()
+    val allLocalImages: LiveData<ArrayList<Images>> = fetchAllImages()
 
-    val allLocalVideos: LiveData<ArrayList<ImagesModel>> = fetchAllVideos()
+    val allLocalVideos: LiveData<ArrayList<Videos>> = fetchAllVideos()
 
-    val allLocalDocs: LiveData<ArrayList<ImagesModel>> = fetchAllDocs()
+    val allLocalDocs: LiveData<ArrayList<Documents>> = getPdfList()
 
-    private fun fetchAllImages(): LiveData<ArrayList<ImagesModel>> {
-        val listImages: ArrayList<ImagesModel> = ArrayList()
-        val mutableListImages = MutableLiveData<ArrayList<ImagesModel>>()
+    private fun fetchAllImages(): LiveData<ArrayList<Images>> {
+        val listImages: ArrayList<Images> = ArrayList()
+        val mutableListImages = MutableLiveData<ArrayList<Images>>()
 
         val columns = arrayOf(
+            MediaStore.Images.Media.TITLE,
+            MediaStore.Images.Media.SIZE,
             MediaStore.Images.Media._ID,
+            MediaStore.Images.Media.BUCKET_DISPLAY_NAME,
             MediaStore.Images.Media.DATA,
-            MediaStore.Images.Media.DISPLAY_NAME
-        ) //get all columns of type images
+            MediaStore.Images.Media.DATE_ADDED,
+            MediaStore.Images.Media.BUCKET_ID
+        )
+
         val orderBy = MediaStore.Images.Media.DATE_TAKEN //order data by date
         val cursor: Cursor? = application.contentResolver.query(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI, columns, null,
@@ -36,23 +47,38 @@ class Repository(private val application: Application) {
         if (cursor != null) {
             for (i in 0 until cursor.count) {
                 cursor.moveToPosition(i)
-                val dataColumnID: Int =
-                    cursor.getColumnIndex(MediaStore.Images.Media._ID) //get column index
-                val dataColumnData: Int =
-                    cursor.getColumnIndex(MediaStore.Images.Media.DATA) //get column index
-                val dataColumnName: Int =
-                    cursor.getColumnIndex(MediaStore.Images.Media.DISPLAY_NAME) //get column index
 
-                val id: String = cursor.getString(dataColumnID)
-                val name: String = cursor.getString(dataColumnName)
-                val path: String = cursor.getString(dataColumnData)
+                val ID: Int =
+                    cursor.getColumnIndex(MediaStore.Images.Media._ID)
+                val DATA: Int =
+                    cursor.getColumnIndex(MediaStore.Images.Media.DATA)
+                val TITLE: Int =
+                    cursor.getColumnIndex(MediaStore.Images.Media.TITLE)
+                val BUCKET_DISPLAY_NAME: Int =
+                    cursor.getColumnIndex(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
+                val BUCKET_ID: Int =
+                    cursor.getColumnIndex(MediaStore.Images.Media.BUCKET_ID)
+                val SIZE: Int =
+                    cursor.getColumnIndex(MediaStore.Images.Media.SIZE)
 
+                val id: String = cursor.getString(ID)
+                val path: String = cursor.getString(DATA)
+                val title: String = cursor.getString(TITLE)
+                val folderName: String = cursor.getString(BUCKET_DISPLAY_NAME)
+                val folderID: String = cursor.getString(BUCKET_ID)
+                val size: String = cursor.getString(SIZE)
+
+                val file = File(path)
+                val artUriC = Uri.fromFile(file)
 
                 listImages.add(
-                    ImagesModel(
+                    Images(
                         id,
-                        name,
-                        path
+                        title,
+                        folderName,
+                        size,
+                        path,
+                        artUriC
                     )
                 ) //get Image from column index
             }
@@ -62,15 +88,19 @@ class Repository(private val application: Application) {
         return mutableListImages
     }
 
-    private fun fetchAllVideos(): LiveData<ArrayList<ImagesModel>> {
-        val listVideos: ArrayList<ImagesModel> = ArrayList()
-        val mutableListVideos = MutableLiveData<ArrayList<ImagesModel>>()
-
+    private fun fetchAllVideos(): LiveData<ArrayList<Videos>> {
+        val listVideos: ArrayList<Videos> = ArrayList()
+        val mutableListVideos = MutableLiveData<ArrayList<Videos>>()
         val columns = arrayOf(
+            MediaStore.Video.Media.TITLE,
+            MediaStore.Video.Media.SIZE,
             MediaStore.Video.Media._ID,
+            MediaStore.Video.Media.BUCKET_DISPLAY_NAME,
             MediaStore.Video.Media.DATA,
-            MediaStore.Video.Media.DISPLAY_NAME
-        ) //get all columns of type images
+            MediaStore.Video.Media.DATE_ADDED,
+            MediaStore.Video.Media.DURATION,
+            MediaStore.Video.Media.BUCKET_ID
+        )
         val orderBy = MediaStore.Video.Media.DATE_TAKEN //order data by date
         val cursor: Cursor? = application.contentResolver.query(
             MediaStore.Video.Media.EXTERNAL_CONTENT_URI, columns, null,
@@ -80,22 +110,42 @@ class Repository(private val application: Application) {
         if (cursor != null) {
             for (i in 0 until cursor.count) {
                 cursor.moveToPosition(i)
-                val dataColumnID: Int =
-                    cursor.getColumnIndex(MediaStore.Images.Media._ID) //get column index
-                val dataColumnData: Int =
-                    cursor.getColumnIndex(MediaStore.Video.Media.DATA) //get column index
-                val dataColumnName: Int =
-                    cursor.getColumnIndex(MediaStore.Video.Media.DISPLAY_NAME) //get column index
 
-                val id: String = cursor.getString(dataColumnID)
-                val name: String = cursor.getString(dataColumnName)
-                val path: String = cursor.getString(dataColumnData)
+                val ID: Int =
+                    cursor.getColumnIndex(MediaStore.Video.Media._ID)
+                val DATA: Int =
+                    cursor.getColumnIndex(MediaStore.Video.Media.DATA)
+                val TITLE: Int =
+                    cursor.getColumnIndex(MediaStore.Video.Media.TITLE)
+                val BUCKET_DISPLAY_NAME: Int =
+                    cursor.getColumnIndex(MediaStore.Video.Media.BUCKET_DISPLAY_NAME)
+                val BUCKET_ID: Int =
+                    cursor.getColumnIndex(MediaStore.Video.Media.BUCKET_ID)
+                val SIZE: Int =
+                    cursor.getColumnIndex(MediaStore.Video.Media.SIZE)
+                val DURATION: Int =
+                    cursor.getColumnIndex(MediaStore.Video.Media.DURATION)
+
+                val id: String = cursor.getString(ID)
+                val path: String = cursor.getString(DATA)
+                val title: String = cursor.getString(TITLE)
+                val folderName: String = cursor.getString(BUCKET_DISPLAY_NAME)
+                val folderID: String = cursor.getString(BUCKET_ID)
+                val size: String = cursor.getString(SIZE)
+                val duration: Long = cursor.getString(DURATION).toLong()
+
+                val file = File(path)
+                val artUriC = Uri.fromFile(file)
 
                 listVideos.add(
-                    ImagesModel(
+                    Videos(
                         id,
-                        name,
-                        path
+                        title,
+                        duration,
+                        folderName,
+                        size,
+                        path,
+                        artUriC
                     )
                 ) //get Image from column index
             }
@@ -105,29 +155,112 @@ class Repository(private val application: Application) {
         return mutableListVideos
     }
 
-    private fun fetchAllDocs(): LiveData<ArrayList<ImagesModel>> {
-        val listDocs: ArrayList<ImagesModel> = ArrayList()
-        val mutableListDocs = MutableLiveData<ArrayList<ImagesModel>>()
+    @SuppressLint("Range")
+    private fun fetchAllDocs(): LiveData<ArrayList<Documents>> {
+        val listVideos: ArrayList<Documents> = ArrayList()
+        val mutableListVideos = MutableLiveData<ArrayList<Documents>>()
 
-        var gpath: String = Environment.getExternalStorageDirectory().absolutePath
-        var fullpath = File(gpath + File.separator + "Download")
+        val cr: ContentResolver = application.contentResolver
+        val uri = MediaStore.Files.getContentUri("internal")
 
-        val fileList: ArrayList<File> = ArrayList()
-        val listAllFiles = fullpath.listFiles()
+        val projection =
+            arrayOf(MediaStore.Files.FileColumns._ID, MediaStore.Files.FileColumns.DISPLAY_NAME)
+        (MediaStore.Files.FileColumns.MEDIA_TYPE + "="
+                + MediaStore.Files.FileColumns.MEDIA_TYPE)
+        val selectionMimeType = MediaStore.Files.FileColumns.MIME_TYPE + "=?"
+        val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension("html")
+        val selectionArgsPdf = arrayOf(mimeType)
 
-        if (listAllFiles != null && listAllFiles.isNotEmpty()) {
-            for (currentFile in listAllFiles) {
-//                if (currentFile.name.endsWith(".pdf")) {
-                // File absolute path
-                Log.e("downloadFilePath", currentFile.absolutePath)
-                // File Name
-                Log.e("downloadFileName", currentFile.name)
-                fileList.add(currentFile.absoluteFile)
-//                }
-            }
-            Log.w("fileList", "" + fileList.size)
+        val cursor = cr.query(uri, projection, selectionMimeType, selectionArgsPdf, null)!!
+
+        for (i in 0 until cursor.count) {
+            cursor.moveToPosition(i)
+
+            val columnIndex = cursor.getColumnIndex(projection[0])
+            val fileId = cursor.getInt(columnIndex).toString()
+            val displayName = cursor.getString(cursor.getColumnIndex(projection[1]))
+
+            val path = "$uri/$fileId"
+            val file = File(path)
+            val fileUri = Uri.fromFile(file)
+
+            listVideos.add(
+                Documents(
+                    fileId,
+                    displayName,
+                    "size",
+                    path,
+                    fileUri
+                )
+            ) //get Image from column index
         }
+        cursor.close()
 
-        return mutableListDocs
+        mutableListVideos.value = listVideos
+        return mutableListVideos
+    }
+
+    fun getPdfList(): LiveData<ArrayList<Documents>> {
+        val listVideos: ArrayList<Documents> = ArrayList()
+        val mutableListVideos = MutableLiveData<ArrayList<Documents>>()
+
+        val projection = arrayOf(
+            MediaStore.Files.FileColumns._ID,
+            MediaStore.Files.FileColumns.DISPLAY_NAME,
+            MediaStore.Files.FileColumns.DATE_ADDED,
+            MediaStore.Files.FileColumns.DATA,
+            MediaStore.Files.FileColumns.MIME_TYPE,
+            MediaStore.Files.FileColumns.SIZE
+        )
+        val sortOrder = MediaStore.Files.FileColumns.DATE_ADDED + " DESC"
+        val selection = MediaStore.Files.FileColumns.MIME_TYPE + " = ?"
+        val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension("pdf")
+        val selectionArgs = arrayOf(mimeType)
+        val collection: Uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL)
+        } else {
+            MediaStore.Files.getContentUri("external")
+        }
+        application.contentResolver.query(
+            collection,
+            projection,
+            selection,
+            selectionArgs,
+            sortOrder
+        ).use { cursor ->
+            assert(cursor != null)
+            if (cursor != null) {
+                if (cursor.moveToFirst()) {
+                    val columnID: Int = cursor.getColumnIndex(MediaStore.Files.FileColumns._ID)
+                    val columnData: Int = cursor.getColumnIndex(MediaStore.Files.FileColumns.DATA)
+                    val columnSize: Int = cursor.getColumnIndex(MediaStore.Files.FileColumns.SIZE)
+                    val columnName: Int =
+                        cursor.getColumnIndex(MediaStore.Files.FileColumns.DISPLAY_NAME)
+                    do {
+                        val id: String = cursor.getString(columnID)
+                        val path: String = cursor.getString(columnData)
+                        val name: String = cursor.getString(columnName)
+                        val size: String = cursor.getString(columnSize)
+
+                        val file = File(path)
+                        val fileUri = Uri.fromFile(file)
+                        if (file.exists()) {
+                            //you can get your pdf files
+                            listVideos.add(
+                                Documents(
+                                    id,
+                                    name,
+                                    size,
+                                    path,
+                                    fileUri
+                                )
+                            )
+                        }
+                    } while (cursor.moveToNext())
+                }
+            }
+        }
+        mutableListVideos.value = listVideos
+        return mutableListVideos
     }
 }

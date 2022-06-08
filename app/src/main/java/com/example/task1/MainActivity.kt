@@ -1,19 +1,22 @@
 package com.example.task1
 
+import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.view.View
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.databinding.DataBindingUtil
-import androidx.fragment.app.*
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentActivity
+import androidx.fragment.app.FragmentManager
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.example.task1.databinding.ActivityMainBinding
-import com.example.task1.utils.Interfaces
+import com.example.task1.utils.Helper
 import com.example.task1.view.DocsFragment
 import com.example.task1.view.ImagesFragment
 import com.example.task1.view.VideosFragment
@@ -28,10 +31,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var layout: View
     lateinit var viewPager: ViewPager2
     private lateinit var tabLayout: TabLayout
-    private val READ_STORAGE_PERMISSION_REQUEST_CODE = 100
-    private val REQUEST_CODE = 200
-    private val REQUEST_CODE1 = 124
-    private val mIntentListener: Interfaces? = null
+    private val READ_STORAGE_PERMISSION_REQUEST_CODE = 14
+    private val WRITE_STORAGE_PERMISSION_REQUEST_CODE = 13
+    val adapter = AdapterTabPager(this)
 
     private val listofFragment = arrayOf(
         ImagesFragment(),
@@ -47,9 +49,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         initViews()
-        permissionChecker()
+        if (requestRuntimePermission()) {
+            setStatePageAdapter()
+        }
         tabLayoutListener()
-
     }
 
     private fun initViews() {
@@ -60,72 +63,74 @@ class MainActivity : AppCompatActivity() {
         tabLayout = binding.tabs
     }
 
-    private fun permissionChecker() {
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                android.Manifest.permission.READ_EXTERNAL_STORAGE
-            )
-            == PackageManager.PERMISSION_GRANTED
-        ) {
-            // Permission is already available
-            setStatePageAdapter()
-        } else {
-            // Permission is missing and must be requested.
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                requestCameraPermission()
+    //for requesting permission
+    private fun requestRuntimePermission(): Boolean {
+        //requesting storage permission for only devices less than api 28
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                    WRITE_STORAGE_PERMISSION_REQUEST_CODE
+                )
+                return false
             }
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.M)
-    private fun requestCameraPermission() {
-        if (shouldShowRequestPermissionRationale(android.Manifest.permission.READ_EXTERNAL_STORAGE)) {
-
-            showSnackBar(R.string.storage_permission_check, Snackbar.LENGTH_INDEFINITE, R.string.ok)
-
         } else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                requestPermissions(
-                    arrayOf(
-                        android.Manifest.permission.READ_EXTERNAL_STORAGE,
-                        android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-                    ),
+            //read external storage permission for devices higher than android 10 i.e. api 29
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.READ_EXTERNAL_STORAGE
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
                     READ_STORAGE_PERMISSION_REQUEST_CODE
                 )
+                return false
             }
         }
+        return true
     }
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
-        permissions: Array<String?>,
+        permissions: Array<out String>,
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == READ_STORAGE_PERMISSION_REQUEST_CODE) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        if (requestCode == WRITE_STORAGE_PERMISSION_REQUEST_CODE) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 setStatePageAdapter()
             } else {
                 showSnackBar(
                     R.string.storage_permission_check,
                     Snackbar.LENGTH_INDEFINITE,
-                    R.string.ok
+                    R.string.ok,
+                    requestCode
+                )
+            }
+        }
+        //for read external storage permission
+        if (requestCode == READ_STORAGE_PERMISSION_REQUEST_CODE) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                setStatePageAdapter()
+            } else {
+                showSnackBar(
+                    R.string.storage_permission_check,
+                    Snackbar.LENGTH_INDEFINITE,
+                    R.string.ok,
+                    requestCode
                 )
             }
         }
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_CODE) {
-            mIntentListener?.onIntent(data, resultCode)
-        } else if (requestCode == REQUEST_CODE1) {
-            mIntentListener?.onIntent1(data, resultCode)
-        }
-    }
-
-    fun setStatePageAdapter() {
-        val adapter = AdapterTabPager(this)
+    private fun setStatePageAdapter() {
 
         for (item in listofFragment.indices) {
             adapter.addFragment(listofFragment[item], fragmentNames[item])
@@ -151,14 +156,9 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onTabUnselected(tab: TabLayout.Tab) {
-                // setAdapter();
-
-
             }
 
             override fun onTabReselected(tab: TabLayout.Tab) {
-
-                //   viewPager.notifyAll();
             }
         })
     }
@@ -167,7 +167,7 @@ class MainActivity : AppCompatActivity() {
         private val mFragmentList: MutableList<Fragment> = ArrayList()
         private val mFragmentTitleList: MutableList<String> = ArrayList()
 
-        public fun getTabTitle(position: Int): String {
+        fun getTabTitle(position: Int): String {
             return mFragmentTitleList[position]
         }
 
@@ -185,17 +185,51 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun showSnackBar(permissionCheck: Int, lengthLong: Int, actionText: Int) {
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        val mIntentListener = Helper(this)
+        if (requestCode == 123 && resultCode == RESULT_OK) {
+
+            var fragment = getVisibleFragment() as VideosFragment
+
+//            fragment.afterDeleteRefresh()
+            fragment.videosListAdapter.onResult(requestCode, resultCode)
+
+//            mIntentListener.onIntent(data, resultCode, requestCode)
+        } else if (requestCode == 124 && resultCode == RESULT_OK) {
+            var fragment = getVisibleFragment() as VideosFragment
+
+            fragment.videosListAdapter.onResult(requestCode, resultCode)
+
+//            mIntentListener.onIntent(data, resultCode, requestCode)
+        }
+    }
+
+    private fun getVisibleFragment(): Fragment? {
+        val fragmentManager: FragmentManager = this@MainActivity.supportFragmentManager
+        val fragments: List<Fragment> = fragmentManager.fragments
+        for (fragment in fragments) {
+            if (fragment.isVisible) return fragment
+        }
+        return null
+    }
+
+    private fun showSnackBar(
+        permissionCheck: Int,
+        lengthLong: Int,
+        actionText: Int,
+        requestCode: Int
+    ) {
         val snackBar =
             Snackbar.make(layout, permissionCheck, lengthLong)
                 .setAction(actionText) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                         requestPermissions(
                             arrayOf(
-                                android.Manifest.permission.READ_EXTERNAL_STORAGE,
-                                android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+                                Manifest.permission.READ_EXTERNAL_STORAGE,
+                                Manifest.permission.WRITE_EXTERNAL_STORAGE
                             ),
-                            READ_STORAGE_PERMISSION_REQUEST_CODE
+                            requestCode
                         )
                     }
                 }

@@ -7,7 +7,7 @@ import androidx.databinding.DataBindingUtil
 import androidx.viewpager2.widget.ViewPager2
 import com.example.task1.adapter.ImagesPagerAdapter
 import com.example.task1.databinding.ActivityImageSliderBinding
-import com.example.task1.model.ImagesModel
+import com.example.task1.model.Images
 
 class ImageSliderActivity : AppCompatActivity() {
 
@@ -15,7 +15,7 @@ class ImageSliderActivity : AppCompatActivity() {
     private lateinit var imagePager: ViewPager2
     private lateinit var previous: Button
     private lateinit var next: Button
-    private var allImages: ArrayList<ImagesModel> = ArrayList()
+    private var allImages: ArrayList<Images> = ArrayList()
     private var position: Int = 0
     lateinit var imagesPagerAdapter: ImagesPagerAdapter
 
@@ -59,7 +59,7 @@ class ImageSliderActivity : AppCompatActivity() {
             imagePager.setCurrentItem(getItem(-1), true) //getItem(-1) for previous
         }
         next.setOnClickListener() {
-            imagePager.setCurrentItem(getItem(+1), true) //getItem(-1) for previous
+            imagePager.setCurrentItem(getItem(+1), true) //getItem(+1) for next
         }
     }
 

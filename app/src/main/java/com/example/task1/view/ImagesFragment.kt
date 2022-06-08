@@ -13,11 +13,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.task1.R
 import com.example.task1.adapter.ImagesListAdapter
 import com.example.task1.databinding.FragmentImagesBinding
-import com.example.task1.viewModel.viewModel
+import com.example.task1.viewModel.ViewModel
 
 class ImagesFragment : Fragment() {
 
-    private lateinit var viewModal: viewModel
+    private lateinit var viewModal: ViewModel
 
     lateinit var imagesListAdapter: ImagesListAdapter
     private lateinit var binding: FragmentImagesBinding
@@ -34,9 +34,14 @@ class ImagesFragment : Fragment() {
         )
 
         initViews()
-        setupViewModel()
 
         return binding.root
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        getAllItems()
     }
 
     private fun initViews() {
@@ -52,11 +57,11 @@ class ImagesFragment : Fragment() {
         )
     }
 
-    private fun setupViewModel() {
+    private fun getAllItems() {
         viewModal = ViewModelProvider(
             this,
             ViewModelProvider.AndroidViewModelFactory.getInstance(activity?.application!!)
-        ).get(viewModel::class.java)
+        ).get(ViewModel::class.java)
 
         viewModal.allImages.observe(viewLifecycleOwner, Observer { list ->
             list?.let {
