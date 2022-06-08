@@ -187,21 +187,17 @@ class MainActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        val mIntentListener = Helper(this)
-        if (requestCode == 123 && resultCode == RESULT_OK) {
-
-            var fragment = getVisibleFragment() as VideosFragment
-
-//            fragment.afterDeleteRefresh()
-            fragment.videosListAdapter.onResult(requestCode, resultCode)
-
-//            mIntentListener.onIntent(data, resultCode, requestCode)
-        } else if (requestCode == 124 && resultCode == RESULT_OK) {
-            var fragment = getVisibleFragment() as VideosFragment
-
-            fragment.videosListAdapter.onResult(requestCode, resultCode)
-
-//            mIntentListener.onIntent(data, resultCode, requestCode)
+        if (resultCode == RESULT_OK) {
+            if (requestCode == 123 || requestCode == 124) {
+                var fragment = getVisibleFragment() as VideosFragment
+                fragment.videosListAdapter.onResult(requestCode)
+            } else if (requestCode == 125 || requestCode == 126) {
+                var fragment = getVisibleFragment() as ImagesFragment
+                fragment.imagesListAdapter.onResult(requestCode)
+            } else if (requestCode == 127 || requestCode == 128) {
+                var fragment = getVisibleFragment() as DocsFragment
+                fragment.docsListAdapter.onResult(requestCode)
+            }
         }
     }
 

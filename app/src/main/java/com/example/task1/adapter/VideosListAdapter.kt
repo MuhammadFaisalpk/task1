@@ -20,16 +20,15 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.example.task1.R
 import com.example.task1.VideoPlayerActivity
 import com.example.task1.model.Videos
-import com.example.task1.utils.DeleteInterface
-import com.example.task1.utils.Helper
-import com.example.task1.view.VideosFragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.io.File
+
 
 class VideosListAdapter(private val context: Fragment) :
     RecyclerView.Adapter<VideosListAdapter.ViewHolder>() {
 
     var items: ArrayList<Videos>? = null
+    var newItem: Videos? = null
     private var newPosition = 0
 
     // create new views
@@ -45,8 +44,6 @@ class VideosListAdapter(private val context: Fragment) :
     // binds the list items to a view
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         try {
-            newPosition = position
-
             val videos = items?.get(position)
 
             holder.nameHolder.text = items?.get(position)?.title
@@ -69,21 +66,17 @@ class VideosListAdapter(private val context: Fragment) :
                 val popupMenu: PopupMenu = PopupMenu(it.context, holder.optionHolder)
                 popupMenu.menuInflater.inflate(R.menu.popup_menu, popupMenu.menu)
                 popupMenu.setOnMenuItemClickListener { item ->
-                    when (item.itemId) {
+                    newPosition = position
+                    newItem = videos
 
+                    when (item.itemId) {
                         R.id.action_rename -> {
                             requestWriteR()
                         }
                         R.id.action_delete -> {
-                            var helper = Helper(context.requireContext())
                             if (videos != null) {
-                                helper.requestDeleteR(it, videos)
+                                requestDeleteVideo(it, videos)
                             }
-//                            val fragment = VideosFragment()
-//                            if (videos != null) {
-//                                fragment.requestDeleteR(it, videos, position)
-//                            }
-//                            requestDeleteR(position = position)
                         }
                     }
                     true
@@ -118,7 +111,6 @@ class VideosListAdapter(private val context: Fragment) :
         val dialog = context.context?.let { Dialog(it) }
         if (dialog != null) {
             dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
-
             dialog.setCancelable(true)
 
             dialog.setContentView(R.layout.rename_dialog_design)
@@ -167,11 +159,12 @@ class VideosListAdapter(private val context: Fragment) :
                                     )
                                 }
 
-//                            updateRenameUI(
-//                                position,
-//                                newName = newName.toString(),
-//                                newFile = newFile
-//                            )
+                                updateRenameUI(
+                                    newItem,
+                                    position,
+                                    newName = newName.toString(),
+                                    newFile = newFile
+                                )
                             }
                         }
                         dialog.dismiss()
@@ -192,13 +185,15 @@ class VideosListAdapter(private val context: Fragment) :
                                         arrayOf("video/*"),
                                         null
                                     )
-                                    //                            updateRenameUI(
-                                    //                                position = position,
-                                    //                                newName = newName.toString(),
-                                    //                                newFile = newFile
-                                    //                            )
                                 }
+                                updateRenameUI(
+                                    newItem,
+                                    position = position,
+                                    newName = newName.toString(),
+                                    newFile = newFile
+                                )
                             }
+
                         }
                         dialog.dismiss()
                     }
@@ -212,59 +207,80 @@ class VideosListAdapter(private val context: Fragment) :
         }
     }
 
-    private fun requestDeleteR(position: Int) {
+    private fun updateRenameUI(newItem: Videos?, position: Int, newName: String, newFile: File) {
+
+        var newItem = Videos(
+            newItem?.id,
+            newName,
+            newItem?.duration!!,
+            newItem?.folderName,
+            newItem?.size,
+            newFile.path,
+            Uri.fromFile(newFile)
+        )
+        items?.removeAt(newPosition)
+        items?.add(newPosition, newItem)
+        notifyItemChanged(position)
+    }
+
+    private fun requestDeleteVideo(v: View?, item: Videos) {
         //list of videos to delete
         val uriList: List<Uri> = listOf(
             Uri.withAppendedPath(
                 MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                items?.get(position)?.id
+                item.id
             )
         )
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             //requesting for delete permission
-            val pi =
-                MediaStore.createDeleteRequest(context.requireContext().contentResolver, uriList)
-            (context.requireContext() as Activity).startIntentSenderForResult(
-                pi.intentSender, 123,
-                null, 0, 0, 0, null
-            )
+            if (v != null) {
+                val pi =
+                    MediaStore.createDeleteRequest(v.context.contentResolver, uriList)
+
+                (v.context as Activity).startIntentSenderForResult(
+                    pi.intentSender, 123,
+                    null, 0, 0, 0, null
+                )
+            }
         } else {
             //for devices less than android 11
-            val file = items?.get(position)?.path?.let { File(it) }
-            val builder = MaterialAlertDialogBuilder(context.requireContext())
-            builder.setTitle("Delete Video?")
-                .setMessage(items?.get(position)?.title)
-                .setPositiveButton("Yes") { self, _ ->
-                    if (file != null) {
-                        if (file.exists() && file.delete()) {
-                            MediaScannerConnection.scanFile(
-                                context.requireContext(),
-                                arrayOf(file.path),
-                                null,
-                                null
-                            )
+            if (v != null) {
+                val file = item.path?.let { File(it) }
+                val builder = MaterialAlertDialogBuilder(v.context)
+                builder.setTitle("Delete Video?")
+                    .setMessage(item.title)
+                    .setPositiveButton("Yes") { self, _ ->
+                        if (file != null) {
+                            if (file.exists() && file.delete()) {
+                                MediaScannerConnection.scanFile(
+                                    v.context,
+                                    arrayOf(file.path),
+                                    null,
+                                    null
+                                )
+                            }
+
                         }
+                        self.dismiss()
                     }
-                    self.dismiss()
-                }
-                .setNegativeButton("No") { self, _ -> self.dismiss() }
-            val delDialog = builder.create()
-            delDialog.show()
-        }
-    }
-
-
-    fun onResult(requestCode: Int, resultCode: Int) {
-        when (requestCode) {
-            123 -> if (resultCode == Activity.RESULT_OK) deleteFromList(newPosition)
-            124 -> if (resultCode == Activity.RESULT_OK) renameFunction(newPosition)
+                    .setNegativeButton("No") { self, _ -> self.dismiss() }
+                val delDialog = builder.create()
+                delDialog.show()
+            }
         }
     }
 
     private fun deleteFromList(position: Int) {
         items?.removeAt(position)
-        notifyDataSetChanged()
+        notifyItemChanged(position)
+    }
+
+    fun onResult(requestCode: Int) {
+        when (requestCode) {
+            123 -> deleteFromList(newPosition)
+            124 -> renameFunction(newPosition)
+        }
     }
 
     override fun getItemCount(): Int {

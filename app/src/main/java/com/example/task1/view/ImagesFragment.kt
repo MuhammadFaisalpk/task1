@@ -34,14 +34,9 @@ class ImagesFragment : Fragment() {
         )
 
         initViews()
+        getAllItems()
 
         return binding.root
-    }
-
-    override fun onResume() {
-        super.onResume()
-
-        getAllItems()
     }
 
     private fun initViews() {

@@ -1,12 +1,9 @@
 package com.example.task1.adapter
 
-import android.annotation.SuppressLint
 import android.app.Activity
-import android.app.AlertDialog
 import android.app.Dialog
 import android.content.ContentValues
 import android.content.Intent
-import android.graphics.Color
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
@@ -16,10 +13,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.Window
 import android.widget.*
-import androidx.activity.result.ActivityResult
-import androidx.activity.result.ActivityResultCallback
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
@@ -28,8 +21,6 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.example.task1.ImageSliderActivity
 import com.example.task1.R
 import com.example.task1.model.Images
-import com.example.task1.utils.Helper
-import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.io.File
 
@@ -39,6 +30,7 @@ class ImagesListAdapter(private val context: Fragment) :
 
     var items: ArrayList<Images>? = null
     private var newPosition = 0
+    var newItem: Images? = null
 
     // create new views
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -53,7 +45,7 @@ class ImagesListAdapter(private val context: Fragment) :
     @RequiresApi(Build.VERSION_CODES.R)
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         try {
-            newPosition = position
+            val images = items?.get(position)
 
             holder.nameHolder.text = items?.get(position)?.title
             holder.fnameHolder.text = items?.get(position)?.folderName
@@ -76,9 +68,13 @@ class ImagesListAdapter(private val context: Fragment) :
                 val popupMenu = PopupMenu(it.context, holder.optionHolder)
                 popupMenu.menuInflater.inflate(R.menu.popup_menu, popupMenu.menu)
                 popupMenu.setOnMenuItemClickListener { item ->
+                    newPosition = position
+                    newItem = images
+
                     when (item.itemId) {
+
                         R.id.action_rename -> requestWriteR()
-                        R.id.action_delete -> requestDeleteR(position = position)
+                        R.id.action_delete -> requestDeleteR(it, images)
 
                     }
                     true
@@ -111,7 +107,7 @@ class ImagesListAdapter(private val context: Fragment) :
             val pi =
                 MediaStore.createWriteRequest(context.requireContext().contentResolver, uriList)
             (context.context as Activity).startIntentSenderForResult(
-                pi.intentSender, 124,
+                pi.intentSender, 126,
                 null, 0, 0, 0, null
             )
         } else renameFunction(newPosition)
@@ -121,7 +117,6 @@ class ImagesListAdapter(private val context: Fragment) :
         val dialog = context.context?.let { Dialog(it) }
         if (dialog != null) {
             dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
-
             dialog.setCancelable(true)
 
             dialog.setContentView(R.layout.rename_dialog_design)
@@ -145,7 +140,6 @@ class ImagesListAdapter(private val context: Fragment) :
                                     MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                                     items?.get(position)?.id
                                 )
-
                                 ContentValues().also {
                                     it.put(MediaStore.Files.FileColumns.IS_PENDING, 1)
                                     context.requireContext().contentResolver.update(
@@ -155,6 +149,7 @@ class ImagesListAdapter(private val context: Fragment) :
                                         null
                                     )
                                     it.clear()
+
                                     //updating file details
                                     it.put(
                                         MediaStore.Files.FileColumns.DISPLAY_NAME,
@@ -169,11 +164,12 @@ class ImagesListAdapter(private val context: Fragment) :
                                     )
                                 }
 
-//                            updateRenameUI(
-//                                position,
-//                                newName = newName.toString(),
-//                                newFile = newFile
-//                            )
+                                updateRenameUI(
+                                    newItem,
+                                    position,
+                                    newName = newName.toString(),
+                                    newFile = newFile
+                                )
                             }
                         }
                         dialog.dismiss()
@@ -191,16 +187,19 @@ class ImagesListAdapter(private val context: Fragment) :
                                     MediaScannerConnection.scanFile(
                                         context.context,
                                         arrayOf(newFile.toString()),
-                                        arrayOf("video/*"),
+                                        arrayOf("images/*"),
                                         null
                                     )
-                                    //                            updateRenameUI(
-                                    //                                position = position,
-                                    //                                newName = newName.toString(),
-                                    //                                newFile = newFile
-                                    //                            )
                                 }
+
+                                updateRenameUI(
+                                    newItem,
+                                    position = position,
+                                    newName = newName.toString(),
+                                    newFile = newFile
+                                )
                             }
+
                         }
                         dialog.dismiss()
                     }
@@ -214,46 +213,76 @@ class ImagesListAdapter(private val context: Fragment) :
         }
     }
 
-    private fun requestDeleteR(position: Int) {
+    private fun updateRenameUI(newItem: Images?, position: Int, newName: String, newFile: File) {
+        var newItem = Images(
+            newItem?.id,
+            newName,
+            newItem?.folderName,
+            newItem?.size,
+            newFile.path,
+            Uri.fromFile(newFile)
+        )
+        items?.removeAt(newPosition)
+        items?.add(newPosition, newItem)
+        notifyItemChanged(position)
+    }
+
+    private fun requestDeleteR(v: View?, images: Images?) {
         //list of images to delete
         val uriList: List<Uri> = listOf(
             Uri.withAppendedPath(
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                items?.get(position)?.id
+                images?.id
             )
         )
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             //requesting for delete permission
             val pi =
                 MediaStore.createDeleteRequest(context.requireContext().contentResolver, uriList)
-            (context.requireContext() as Activity).startIntentSenderForResult(
-                pi.intentSender, 123,
-                null, 0, 0, 0, null
-            )
+            if (v != null) {
+                (v.context as Activity).startIntentSenderForResult(
+                    pi.intentSender, 125,
+                    null, 0, 0, 0, null
+                )
+            }
         } else {
             //for devices less than android 11
-            val file = items?.get(position)?.path?.let { File(it) }
-            val builder = MaterialAlertDialogBuilder(context.requireContext())
-            builder.setTitle("Delete Image?")
-                .setMessage(items?.get(position)?.title)
-                .setPositiveButton("Yes") { self, _ ->
-                    if (file != null) {
-                        if (file.exists() && file.delete()) {
-                            MediaScannerConnection.scanFile(
-                                context.requireContext(),
-                                arrayOf(file.path),
-                                null,
-                                null
-                            )
+            if (v != null) {
+                val file = images?.path?.let { File(it) }
+                val builder = MaterialAlertDialogBuilder(v.context)
+                builder.setTitle("Delete Image?")
+                    .setMessage(images?.title)
+                    .setPositiveButton("Yes") { self, _ ->
+                        if (file != null) {
+                            if (file.exists() && file.delete()) {
+                                MediaScannerConnection.scanFile(
+                                    v.context,
+                                    arrayOf(file.path),
+                                    null,
+                                    null
+                                )
+                            }
+
                         }
+                        self.dismiss()
                     }
-                    self.dismiss()
-                }
-                .setNegativeButton("No") { self, _ -> self.dismiss() }
-            val delDialog = builder.create()
-            delDialog.show()
+                    .setNegativeButton("No") { self, _ -> self.dismiss() }
+                val delDialog = builder.create()
+                delDialog.show()
+            }
         }
+    }
+
+    fun onResult(requestCode: Int) {
+        when (requestCode) {
+            125 -> deleteFromList(newPosition)
+            126 -> renameFunction(newPosition)
+        }
+    }
+
+    private fun deleteFromList(position: Int) {
+        items?.removeAt(position)
+        notifyItemChanged(position)
     }
 
     fun setListItems(items: ArrayList<Images>) {

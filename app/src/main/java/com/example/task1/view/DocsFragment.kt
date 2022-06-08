@@ -18,7 +18,7 @@ import com.example.task1.viewModel.ViewModel
 class DocsFragment : Fragment() {
 
     private lateinit var viewModal: ViewModel
-    private lateinit var docsListAdapter: DocsListAdapter
+    lateinit var docsListAdapter: DocsListAdapter
     private lateinit var binding: FragmentDocsBinding
 
     override fun onCreateView(
@@ -33,14 +33,9 @@ class DocsFragment : Fragment() {
         )
 
         initViews()
+        getAllItems()
 
         return binding.root
-    }
-
-    override fun onResume() {
-        super.onResume()
-
-        getAllItems()
     }
 
     private fun initViews() {
