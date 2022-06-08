@@ -59,7 +59,7 @@ class VideosListAdapter(private val context: Fragment) :
 
             holder.itemView.setOnClickListener() {
                 val intent = Intent(it.context, VideoPlayerActivity::class.java)
-                intent.putExtra("video_path", imagePath)
+                intent.putExtra("video_data", videos)
                 it.context.startActivity(intent)
             }
             holder.optionHolder.setOnClickListener() {
